@@ -1,0 +1,44 @@
+package com.training.codingstandards;
+
+import java.io.File;
+import java.util.List;
+
+public class App {
+
+    public static void main(String[] args) {
+        String csvPath = null;
+        String excelPath = "payroll-report.xlsx";
+
+        if (args.length > 0) {
+            csvPath = args[0];
+        }
+        if (args.length > 1) {
+            excelPath = args[1];
+        }
+
+        System.out.println("CSV to Excel processor starting...");
+
+        CsvEmployeeReader reader = new CsvEmployeeReader();
+        List<Employee> employees = reader.read(csvPath);
+
+        EmployeeProcessor processor = new EmployeeProcessor();
+        List<EmployeeProcessor.PayrollRow> rows = processor.process(employees);
+
+        File out = new File(excelPath);
+        ExcelReportWriter writer = new ExcelReportWriter();
+        writer.write(rows, out.getAbsolutePath());
+
+        DatabaseHelper db = new DatabaseHelper();
+        if (args.length > 2) {
+            db.auditExport(args[2]);
+            if (!employees.isEmpty() && args.length > 3) {
+                Employee lookedUp = db.findEmployee(args[3]);
+                if (lookedUp != null) {
+                    System.out.println("Lookup result: " + lookedUp.name);
+                }
+            }
+        }
+
+        System.out.println("Processed " + rows.size() + " employees into " + excelPath);
+    }
+}
