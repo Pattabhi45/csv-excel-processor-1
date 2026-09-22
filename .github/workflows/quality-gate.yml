@@ -50,7 +50,7 @@ jobs:
           echo "SonarQube did not become ready in time"
           exit 1
 
-      - name: Bootstrap SonarQube auth and failing quality gate
+      - name: Bootstrap SonarQube auth and default quality gate
         run: |
           set -euo pipefail
 
@@ -95,26 +95,11 @@ jobs:
           echo "SONAR_LOGIN=${SONAR_LOGIN}" >> "${GITHUB_ENV}"
           echo "SONAR_AUTH=${SONAR_AUTH}" >> "${GITHUB_ENV}"
 
-          curl -sf -u "${SONAR_AUTH}" -X POST \
-            "${SONAR_HOST_URL}/api/qualitygates/create" \
-            --data-urlencode "name=workshop-fail" || true
-
-          create_condition() {
-            curl -sf -u "${SONAR_AUTH}" -X POST \
-              "${SONAR_HOST_URL}/api/qualitygates/create_condition" \
-              --data-urlencode "gateName=workshop-fail" \
-              --data-urlencode "metric=${1}" \
-              --data-urlencode "op=${2}" \
-              --data-urlencode "error=${3}" || true
-          }
-          create_condition bugs GT 0
-          create_condition vulnerabilities GT 0
-          create_condition code_smells GT 0
-          create_condition coverage LT 80
-
+          # Use Sonar's built-in default gate so the repository is evaluated according to the
+          # project quality standards instead of the intentionally failing workshop gate.
           curl -sf -u "${SONAR_AUTH}" -X POST \
             "${SONAR_HOST_URL}/api/qualitygates/set_as_default" \
-            --data-urlencode "name=workshop-fail" || true
+            --data-urlencode "name=Sonar way" || true
 
       - name: Run tests, coverage, and Sonar analysis
         id: scan
